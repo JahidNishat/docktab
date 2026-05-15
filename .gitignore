@@ -1,0 +1,9 @@
+docktab
+*.exe
+*.test
+vendor/
+.idea/
+.vscode/
+.env
+dist/
+bin/
