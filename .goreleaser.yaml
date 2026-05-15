@@ -1,7 +1,4 @@
-version: 2
-
 project_name: docktab
-
 builds:
   - id: docktab
     main: ./cmd/docktab
