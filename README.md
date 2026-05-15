@@ -17,7 +17,7 @@
 ## Installation
 
 ```bash
-go install github.com/JahidNishat/docktab@latest
+go install github.com/JahidNishat/docktab/cmd/docktab@latest
 ```
 Or build from source:
 ```bash
