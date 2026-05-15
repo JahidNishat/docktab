@@ -5,10 +5,18 @@ import (
 	"os"
 )
 
-func New() *slog.Logger {
+func New(debug bool) *slog.Logger {
 	level := slog.LevelInfo
-	if os.Getenv("DOCKTAB_DEBUG") == "true" {
+	if debug {
 		level = slog.LevelDebug
 	}
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
+
+	return slog.New(
+		slog.NewTextHandler(
+			os.Stderr,
+			&slog.HandlerOptions{
+				Level: level,
+			},
+		),
+	)
 }

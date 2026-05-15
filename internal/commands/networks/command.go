@@ -41,8 +41,16 @@ func (c Command) Build() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			c.log.Debug(
+				"listing networks",
+				"sort", sortBy,
+				"compact", compact,
+				"full", full,
+			)
+
 			networks, err := c.client.ListNetworks(ctx)
 			if err != nil {
+				c.log.Error("failed to list networks", "error", err)
 				return err
 			}
 

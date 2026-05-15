@@ -59,7 +59,7 @@ type dockerClient struct {
 	cli *client.Client
 }
 
-func NewClient(host string) Client {
+func NewClient(host string) (Client, error) {
 	opts := []client.Opt{client.FromEnv}
 	if host != "" {
 		opts = append(opts, client.WithHost(host))
@@ -67,9 +67,9 @@ func NewClient(host string) Client {
 
 	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create docker client: %v", err))
+		return nil, fmt.Errorf("create docker client: %w", err)
 	}
-	return &dockerClient{cli: cli}
+	return &dockerClient{cli: cli}, nil
 }
 
 func (d *dockerClient) ListContainers(ctx context.Context, all bool) ([]Container, error) {
@@ -81,8 +81,8 @@ func (d *dockerClient) ListContainers(ctx context.Context, all bool) ([]Containe
 	result := make([]Container, 0, len(containers))
 	for _, c := range containers {
 		result = append(result, Container{
-			ID:      c.ID[:12],                           // Shorten ID for display
-			Name:    strings.TrimPrefix(c.Names[0], "/"), // Remove leading slash from name
+			ID:      shortID(c.ID, 12),           // Shorten ID for display
+			Name:    firstContainerName(c.Names), // Remove leading slash from name
 			Image:   c.Image,
 			Command: c.Command,
 			Created: time.Unix(c.Created, 0),
@@ -124,15 +124,10 @@ func (d *dockerClient) ListImages(ctx context.Context, all bool) ([]Image, error
 		}
 
 		for _, repoTag := range repoTags {
-			parts := strings.Split(repoTag, ":")
-			repository := parts[0]
-			tag := "latest"
-			if len(parts) > 1 {
-				tag = parts[1]
-			}
+			repository, tag := splitRepoTag(repoTag)
 
 			result = append(result, Image{
-				ID:         img.ID[7:19], // short ID
+				ID:         shortID(strings.TrimPrefix(img.ID, "sha256:"), 12),
 				Repository: repository,
 				Tag:        tag,
 				Created:    time.Unix(img.Created, 0),
@@ -178,7 +173,7 @@ func (d *dockerClient) ListNetworks(ctx context.Context) ([]Network, error) {
 	result := make([]Network, 0, len(networks))
 	for _, n := range networks {
 		result = append(result, Network{
-			ID:      n.ID[:12],
+			ID:      shortID(n.ID, 12),
 			Name:    n.Name,
 			Driver:  n.Driver,
 			Scope:   n.Scope,

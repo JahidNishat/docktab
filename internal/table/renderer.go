@@ -121,9 +121,18 @@ func (r *renderer) colorStatus(status string) string {
 }
 
 func truncate(s string, max int) string {
+	if max <= 0 {
+		return ""
+	}
+
 	if len(s) <= max {
 		return s
 	}
+
+	if max <= 3 {
+		return s[:max]
+	}
+
 	return s[:max-3] + "..."
 }
 

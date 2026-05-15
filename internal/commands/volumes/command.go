@@ -41,6 +41,13 @@ func (c Command) Build() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			c.log.Debug(
+				"listing volumes",
+				"sort", sortBy,
+				"compact", compact,
+				"full", full,
+			)
+
 			volumes, err := c.client.ListVolumes(ctx)
 			if err != nil {
 				return err
