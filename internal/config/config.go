@@ -17,15 +17,23 @@ func LoadEnv() error {
 }
 
 func New() *Config {
-	viper.SetEnvPrefix("DOCKTAB")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	viper.SetDefault("docker.host", "")
-	viper.SetDefault("debug", false)
+	v := newViper()
 
 	return &Config{
-		DockerHost: viper.GetString("docker.host"),
-		Debug:      viper.GetBool("debug"),
+		DockerHost: v.GetString("docker.host"),
+		Debug:      v.GetBool("debug"),
 	}
+}
+
+func newViper() *viper.Viper {
+	v := viper.New()
+
+	v.SetEnvPrefix("DOCKTAB")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	v.SetDefault("docker.host", "")
+	v.SetDefault("debug", false)
+
+	return v
 }
