@@ -44,18 +44,36 @@ func (c Command) Build() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			c.log.Debug(
+				"listing containers",
+				"all", all,
+				"name_filter", nameFilter,
+				"sort", sortBy,
+				"compact", compact,
+				"full", full,
+			)
+
 			containers, err := c.client.ListContainers(ctx, all)
 			if err != nil {
+				c.log.Error("failed to list containers", "error", err)
 				return err
 			}
+			c.log.Debug("containers fetched", "count", len(containers))
 
 			// Apply name filter
 			filtered := filterByName(containers, nameFilter)
+			c.log.Debug("containers filtered", "count", len(filtered))
 
 			// Apply sorting
 			sorted := sortContainers(filtered, sortBy)
-
 			columns := getColumns(compact, full)
+
+			c.log.Debug(
+				"rendering containers table",
+				"count", len(sorted),
+				"columns", columns,
+			)
+
 			c.renderer.RenderContainers(sorted, columns, c.log)
 			return nil
 		},

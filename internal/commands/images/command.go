@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/JahidNishat/docktab/internal/docker" // We will update this later
+	"github.com/JahidNishat/docktab/internal/docker"
 	"github.com/JahidNishat/docktab/internal/table"
 )
 
@@ -42,14 +42,23 @@ func (c Command) Build() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			c.log.Debug(
+				"listing images",
+				"all", all,
+				"sort", sortBy,
+				"compact", compact,
+				"full", full,
+			)
+
 			images, err := c.client.ListImages(ctx, all)
 			if err != nil {
+				c.log.Error("failed to list images", "error", err)
 				return err
 			}
 
 			sorted := sortImages(images, sortBy)
 			columns := getImageColumns(compact, full)
-			c.renderer.RenderImages(sorted, columns, c.log) // We will add this method
+			c.renderer.RenderImages(sorted, columns, c.log)
 			return nil
 		},
 	}
