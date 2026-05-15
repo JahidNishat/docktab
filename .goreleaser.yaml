@@ -1,0 +1,39 @@
+version: 2
+
+project_name: docktab
+
+builds:
+  - id: docktab
+    main: ./cmd/docktab
+    binary: docktab
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/JahidNishat/docktab/internal/version.Version={{.Version}}
+      - -X github.com/JahidNishat/docktab/internal/version.Commit={{.Commit}}
+      - -X github.com/JahidNishat/docktab/internal/version.Date={{.Date}}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: JahidNishat
+    name: docktab
