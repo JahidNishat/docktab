@@ -22,6 +22,7 @@ func NewRootCommand(
 	for _, cmd := range registry.All(client, renderer, log) {
 		root.AddCommand(cmd.Build())
 	}
+	root.AddCommand(NewVersionCommand())
 
 	return root
 }
