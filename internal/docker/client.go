@@ -40,10 +40,19 @@ type Volume struct {
 	Created    time.Time
 }
 
+type Network struct {
+	Name    string
+	ID      string
+	Driver  string
+	Scope   string
+	Created time.Time
+}
+
 type Client interface {
 	ListContainers(ctx context.Context, all bool) ([]Container, error)
 	ListImages(ctx context.Context, all bool) ([]Image, error)
 	ListVolumes(ctx context.Context) ([]Volume, error)
+	ListNetworks(ctx context.Context) ([]Network, error)
 }
 
 type dockerClient struct {
@@ -149,12 +158,31 @@ func (d *dockerClient) ListVolumes(ctx context.Context) ([]Volume, error) {
 	result := make([]Volume, 0, len(volumes.Volumes))
 	for _, v := range volumes.Volumes {
 		created, _ := time.Parse(time.RFC3339, v.CreatedAt)
-		
+
 		result = append(result, Volume{
 			Name:       v.Name,
 			Driver:     v.Driver,
 			Mountpoint: v.Mountpoint,
 			Created:    created,
+		})
+	}
+	return result, nil
+}
+
+func (d *dockerClient) ListNetworks(ctx context.Context) ([]Network, error) {
+	networks, err := d.cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Network, 0, len(networks))
+	for _, n := range networks {
+		result = append(result, Network{
+			ID:      n.ID[:12],
+			Name:    n.Name,
+			Driver:  n.Driver,
+			Scope:   n.Scope,
+			Created: n.Created, // may need parsing if it's string
 		})
 	}
 	return result, nil

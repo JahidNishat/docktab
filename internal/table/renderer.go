@@ -17,6 +17,7 @@ type Renderer interface {
 	RenderContainers(containers []docker.Container, columns []string, log *slog.Logger)
 	RenderImages(images []docker.Image, columns []string, log *slog.Logger)
 	RenderVolumes(volumes []docker.Volume, columns []string, log *slog.Logger)
+	RenderNetworks(networks []docker.Network, columns []string, log *slog.Logger)
 }
 
 type renderer struct {
@@ -47,6 +48,8 @@ func NewRenderer() Renderer {
 		},
 	}
 }
+
+// ==================== CONTAINERS ====================
 
 func (r *renderer) RenderContainers(containers []docker.Container, columns []string, log *slog.Logger) {
 	if len(containers) == 0 {
@@ -144,6 +147,8 @@ func getTerminalWidth() int {
 	return width
 }
 
+// ==================== IMAGES ====================
+
 func (r *renderer) RenderImages(images []docker.Image, columns []string, log *slog.Logger) {
 	if len(images) == 0 {
 		fmt.Println("No images found.")
@@ -208,6 +213,8 @@ func humanizeSize(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
+// ==================== VOLUMES ====================
+
 func (r *renderer) RenderVolumes(volumes []docker.Volume, columns []string, log *slog.Logger) {
 	if len(volumes) == 0 {
 		fmt.Println("No volumes found.")
@@ -252,6 +259,59 @@ func (r *renderer) formatVolumeCell(col string, v docker.Volume) string {
 		return truncate(v.Mountpoint, 40)
 	case "CREATED":
 		return humanizeTime(v.Created)
+	default:
+		return ""
+	}
+}
+
+// ==================== NETWORKS ====================
+
+func (r *renderer) RenderNetworks(networks []docker.Network, columns []string, log *slog.Logger) {
+	if len(networks) == 0 {
+		fmt.Println("No networks found.")
+		return
+	}
+
+	width := getTerminalWidth()
+	headers := columns
+	rows := make([][]string, len(networks))
+
+	for i, n := range networks {
+		row := make([]string, len(columns))
+		for j, col := range columns {
+			row[j] = r.formatNetworkCell(col, n)
+		}
+		rows[i] = row
+	}
+
+	t := table.New().
+		Border(r.styles.Border).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("#7D56F4"))).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == 0 {
+				return r.styles.Header
+			}
+			return r.styles.Cell
+		}).
+		Headers(headers...).
+		Rows(rows...).
+		Width(width - 4)
+
+	fmt.Println(t.Render())
+}
+
+func (r *renderer) formatNetworkCell(col string, n docker.Network) string {
+	switch strings.ToUpper(col) {
+	case "NAME":
+		return truncate(n.Name, 25)
+	case "ID":
+		return n.ID
+	case "DRIVER":
+		return n.Driver
+	case "SCOPE":
+		return n.Scope
+	case "CREATED":
+		return humanizeTime(n.Created)
 	default:
 		return ""
 	}
