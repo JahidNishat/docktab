@@ -9,6 +9,7 @@
 - `docktab ps` — Beautiful container table with filtering & sorting
 - `docktab images` — Clean image listing
 - `docktab volumes` — Volume management table
+- `docktab networks` — Network listing
 - Smart truncation and terminal width detection
 - Status with color coding
 - Human-readable sizes and timestamps
@@ -38,6 +39,9 @@ docktab images --sort size --full
 # Volumes
 docktab volumes
 docktab volumes --sort driver
+
+# Networks
+docktab networks
 ```
 
 ## Architecture
@@ -48,7 +52,6 @@ docktab volumes --sort driver
 
 ## Roadmap
 
-- [ ] docktab networks
 - [ ] --watch mode
 - [ ] Interactive TUI mode (--interactive)
 - [ ] Better configuration system
