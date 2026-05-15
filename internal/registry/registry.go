@@ -1,15 +1,20 @@
 package registry
 
 import (
+	"log/slog"
+
 	"github.com/JahidNishat/docktab/internal/command"
 	"github.com/JahidNishat/docktab/internal/commands/ps"
+	"github.com/JahidNishat/docktab/internal/docker"
+	"github.com/JahidNishat/docktab/internal/table"
 )
 
-func All() []command.Command {
+func All(client docker.Client, renderer table.Renderer, log *slog.Logger) []command.Command {
 	return []command.Command{
-		ps.New(),
+		ps.New(client, renderer, log),
 		// Add more commands here:
-		// images.New(),
-		// volumes.New(),
+		// images.New(client, renderer, log),
+		// networks.New(client, renderer, log),
+		// volumes.New(client, renderer, log),
 	}
 }

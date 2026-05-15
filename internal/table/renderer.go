@@ -76,7 +76,7 @@ func (r *renderer) RenderContainers(containers []docker.Container, columns []str
 		}).
 		Headers(headers...).
 		Rows(rows...).
-		Width(width - 4)
+		Width(width)
 
 	fmt.Println(t.Render())
 }
@@ -103,14 +103,15 @@ func (r *renderer) formatCell(col string, c docker.Container) string {
 }
 
 func (r *renderer) colorStatus(status string) string {
-	lower := strings.ToLower(status)
+	clean := strings.Split(status, " (")[0]
+	lower := strings.TrimSpace(strings.ToLower(clean))
 	switch {
 	case strings.Contains(lower, "up"):
-		return r.styles.Running.Render("🟢 " + status)
+		return r.styles.Running.Render(lower)
 	case strings.Contains(lower, "exited"):
-		return r.styles.Exited.Render("🔴 " + status)
+		return r.styles.Exited.Render(lower)
 	default:
-		return r.styles.Other.Render("🟡 " + status)
+		return r.styles.Other.Render(lower)
 	}
 }
 
