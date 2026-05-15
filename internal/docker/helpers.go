@@ -3,9 +3,14 @@ package docker
 import "strings"
 
 func shortID(id string, n int) string {
+	if n <= 0 {
+		return ""
+	}
+
 	if len(id) <= n {
 		return id
 	}
+
 	return id[:n]
 }
 
@@ -13,6 +18,7 @@ func firstContainerName(names []string) string {
 	if len(names) == 0 {
 		return ""
 	}
+
 	return strings.TrimPrefix(names[0], "/")
 }
 
