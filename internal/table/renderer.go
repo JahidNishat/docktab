@@ -15,6 +15,8 @@ import (
 
 type Renderer interface {
 	RenderContainers(containers []docker.Container, columns []string, log *slog.Logger)
+	RenderImages(images []docker.Image, columns []string, log *slog.Logger)
+	RenderVolumes(volumes []docker.Volume, columns []string, log *slog.Logger)
 }
 
 type renderer struct {
@@ -140,4 +142,117 @@ func getTerminalWidth() int {
 		return 120
 	}
 	return width
+}
+
+func (r *renderer) RenderImages(images []docker.Image, columns []string, log *slog.Logger) {
+	if len(images) == 0 {
+		fmt.Println("No images found.")
+		return
+	}
+
+	width := getTerminalWidth()
+	headers := columns
+	rows := make([][]string, len(images))
+
+	for i, img := range images {
+		row := make([]string, len(columns))
+		for j, col := range columns {
+			row[j] = r.formatImageCell(col, img)
+		}
+		rows[i] = row
+	}
+
+	t := table.New().
+		Border(r.styles.Border).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("#7D56F4"))).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == 0 {
+				return r.styles.Header
+			}
+			return r.styles.Cell
+		}).
+		Headers(headers...).
+		Rows(rows...).
+		Width(width - 4)
+
+	fmt.Println(t.Render())
+}
+
+func (r *renderer) formatImageCell(col string, img docker.Image) string {
+	switch strings.ToUpper(col) {
+	case "REPOSITORY":
+		return truncate(img.Repository, 30)
+	case "TAG":
+		return img.Tag
+	case "IMAGE ID":
+		return img.ID
+	case "CREATED":
+		return humanizeTime(img.Created)
+	case "SIZE":
+		return humanizeSize(img.Size)
+	default:
+		return ""
+	}
+}
+
+func humanizeSize(size int64) string {
+	const unit = 1024
+	if size < unit {
+		return fmt.Sprintf("%d B", size)
+	}
+	div, exp := int64(unit), 0
+	for n := size / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
+}
+
+func (r *renderer) RenderVolumes(volumes []docker.Volume, columns []string, log *slog.Logger) {
+	if len(volumes) == 0 {
+		fmt.Println("No volumes found.")
+		return
+	}
+
+	width := getTerminalWidth()
+	headers := columns
+	rows := make([][]string, len(volumes))
+
+	for i, v := range volumes {
+		row := make([]string, len(columns))
+		for j, col := range columns {
+			row[j] = r.formatVolumeCell(col, v)
+		}
+		rows[i] = row
+	}
+
+	t := table.New().
+		Border(r.styles.Border).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("#7D56F4"))).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == 0 {
+				return r.styles.Header
+			}
+			return r.styles.Cell
+		}).
+		Headers(headers...).
+		Rows(rows...).
+		Width(width - 4)
+
+	fmt.Println(t.Render())
+}
+
+func (r *renderer) formatVolumeCell(col string, v docker.Volume) string {
+	switch strings.ToUpper(col) {
+	case "NAME":
+		return truncate(v.Name, 30)
+	case "DRIVER":
+		return v.Driver
+	case "MOUNTPOINT":
+		return truncate(v.Mountpoint, 40)
+	case "CREATED":
+		return humanizeTime(v.Created)
+	default:
+		return ""
+	}
 }
