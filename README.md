@@ -1,34 +1,54 @@
-# docktab
+# DOCKTAB
 
-> A fast, beautiful Docker table viewer for developers who live in the terminal.
+> A fast, beautiful Docker CLI tool that displays clean, professional tables.
 
-`docktab` turns messy Docker CLI output into clean, professional tables with powerful filtering and sorting.
+`docktab` turns messy Docker output into readable, colored tables with powerful filtering and sorting.
 
-## Features (v0.1)
+## Features
 
-- `docktab ps` — Beautiful container table
-- Clean architecture with interfaces
-- Easy command extensibility
-
-## Architecture
-
-This project demonstrates clean Go architecture:
-
-- `internal/command` — Command interface
-- `internal/registry` — Explicit registration
-- Nested command packages (`commands/ps/`, etc.)
+- `docktab ps` — Beautiful container table with filtering & sorting
+- `docktab images` — Clean image listing
+- `docktab volumes` — Volume management table
+- Smart truncation and terminal width detection
+- Status with color coding
+- Human-readable sizes and timestamps
 
 ## Installation
 
+```bash
+go install github.com/JahidNishat/docktab@latest
+```
+Or build from source:
 ```bash
 git clone https://github.com/JahidNishat/docktab.git
 cd docktab
 make build
 ```
-
-## Usage
-
+## Usage Examples
 ```bash
+# Containers
 docktab ps
 docktab ps -a --compact
+docktab ps --name redis --sort created
+
+# Images
+docktab images
+docktab images --sort size --full
+
+# Volumes
+docktab volumes
+docktab volumes --sort driver
 ```
+
+## Architecture
+- Clean, interface-driven design:
+- internal/command — Command interface
+- internal/registry — Explicit registration
+- Easy to extend with new commands
+
+## Roadmap
+
+- [ ] docktab networks
+- [ ] --watch mode
+- [ ] Interactive TUI mode (--interactive)
+- [ ] Better configuration system
