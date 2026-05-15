@@ -17,15 +17,15 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/JahidNishat/docktab/internal/version.Version={{.Version}}
+      - -X github.com/JahidNishat/docktab/internal/version.Version={{.Tag}}
       - -X github.com/JahidNishat/docktab/internal/version.Commit={{.Commit}}
       - -X github.com/JahidNishat/docktab/internal/version.Date={{.Date}}
 
 archives:
-  - formats: [tar.gz]
+  - formats: [ tar.gz ]
     format_overrides:
       - goos: windows
-        formats: [zip]
+        formats: [ zip ]
     files:
       - README.md
       - LICENSE
