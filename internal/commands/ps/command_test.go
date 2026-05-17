@@ -1,9 +1,11 @@
 package ps
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/JahidNishat/docktab/internal/commands"
 	"github.com/JahidNishat/docktab/internal/docker"
 )
 
@@ -198,4 +200,69 @@ func cloneContainers(input []docker.Container) []docker.Container {
 	cloned := make([]docker.Container, len(input))
 	copy(cloned, input)
 	return cloned
+}
+
+func TestCommandRejectsUnexpectedArgs(t *testing.T) {
+	cmd := New(nil, nil, nil).Build()
+
+	_, _, err := commands.ExecuteCommandForTest(t, cmd, "hello")
+	if err == nil {
+		t.Fatal("expected error for unexpected argument")
+	}
+
+	if !strings.Contains(err.Error(), `unknown command "hello"`) {
+		t.Fatalf("expected unexpected argument error, got: %v", err)
+	}
+}
+
+func TestCommandRejectsInvalidSortField(t *testing.T) {
+	cmd := New(nil, nil, nil).Build()
+
+	_, _, err := commands.ExecuteCommandForTest(t, cmd, "--sort", "banana")
+	if err == nil {
+		t.Fatal("expected error for invalid sort field")
+	}
+
+	if !strings.Contains(err.Error(), `invalid sort field "banana"`) {
+		t.Fatalf("expected invalid sort error, got: %v", err)
+	}
+}
+
+func TestCommandRejectsCompactAndFullTogether(t *testing.T) {
+	cmd := New(nil, nil, nil).Build()
+
+	_, _, err := commands.ExecuteCommandForTest(t, cmd, "--compact", "--full")
+	if err == nil {
+		t.Fatal("expected error for conflicting flags")
+	}
+
+	if !strings.Contains(err.Error(), "--compact and --full cannot be used together") {
+		t.Fatalf("expected conflicting flags error, got: %v", err)
+	}
+}
+
+func TestCommandRejectsInvalidOutputFormat(t *testing.T) {
+	cmd := New(nil, nil, nil).Build()
+
+	_, _, err := commands.ExecuteCommandForTest(t, cmd, "--output", "xml")
+	if err == nil {
+		t.Fatal("expected error for invalid output format")
+	}
+
+	if !strings.Contains(err.Error(), `invalid output format "xml"`) {
+		t.Fatalf("expected invalid output format error, got: %v", err)
+	}
+}
+
+func TestCommandRejectsInvalidOutputFormatShortFlag(t *testing.T) {
+	cmd := New(nil, nil, nil).Build()
+
+	_, _, err := commands.ExecuteCommandForTest(t, cmd, "-o", "xml")
+	if err == nil {
+		t.Fatal("expected error for invalid output format")
+	}
+
+	if !strings.Contains(err.Error(), `invalid output format "xml"`) {
+		t.Fatalf("expected invalid output format error, got: %v", err)
+	}
 }

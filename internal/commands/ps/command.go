@@ -5,11 +5,19 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JahidNishat/docktab/internal/commands"
 	"github.com/spf13/cobra"
 
 	"github.com/JahidNishat/docktab/internal/docker"
 	"github.com/JahidNishat/docktab/internal/table"
 )
+
+var allowedSortFields = []string{
+	"name",
+	"image",
+	"status",
+	"created",
+}
 
 type Command struct {
 	client   docker.Client
@@ -32,15 +40,17 @@ func (c Command) Name() string {
 func (c Command) Build() *cobra.Command {
 	var (
 		all        bool
-		compact    bool
-		full       bool
 		nameFilter string
-		sortBy     string
 	)
+	view := commands.NewViewOptions("name", allowedSortFields)
 
 	cmd := &cobra.Command{
 		Use:   "ps",
 		Short: "Display Docker containers in a clean, beautiful table",
+		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error { // NEW
+			return view.Validate()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
@@ -48,9 +58,9 @@ func (c Command) Build() *cobra.Command {
 				"listing containers",
 				"all", all,
 				"name_filter", nameFilter,
-				"sort", sortBy,
-				"compact", compact,
-				"full", full,
+				"sort", view.Sort,
+				"compact", view.Compact,
+				"full", view.Full,
 			)
 
 			containers, err := c.client.ListContainers(ctx, all)
@@ -65,14 +75,12 @@ func (c Command) Build() *cobra.Command {
 			c.log.Debug("containers filtered", "count", len(filtered))
 
 			// Apply sorting
-			sorted := sortContainers(filtered, sortBy)
-			columns := getColumns(compact, full)
+			sorted := sortContainers(filtered, view.Sort)
+			columns := getColumns(view.Compact, view.Full)
 
-			c.log.Debug(
-				"rendering containers table",
-				"count", len(sorted),
-				"columns", columns,
-			)
+			if view.IsJSON() {
+				return commands.RenderJSON(cmd.OutOrStdout(), sorted)
+			}
 
 			c.renderer.RenderContainers(sorted, columns, c.log)
 			return nil
@@ -80,10 +88,8 @@ func (c Command) Build() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&all, "all", "a", false, "Show all containers (default shows only running)")
-	cmd.Flags().BoolVar(&compact, "compact", false, "Compact view")
-	cmd.Flags().BoolVar(&full, "full", false, "Full view with more columns")
 	cmd.Flags().StringVar(&nameFilter, "name", "", "Filter containers by name")
-	cmd.Flags().StringVar(&sortBy, "sort", "name", "Sort by: name, image, status, created")
+	view.AddFlags(cmd)
 
 	return cmd
 }

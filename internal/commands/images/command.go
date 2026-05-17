@@ -4,11 +4,19 @@ import (
 	"log/slog"
 	"sort"
 
+	"github.com/JahidNishat/docktab/internal/commands"
 	"github.com/spf13/cobra"
 
 	"github.com/JahidNishat/docktab/internal/docker"
 	"github.com/JahidNishat/docktab/internal/table"
 )
+
+var allowedSortFields = []string{
+	"repository",
+	"tag",
+	"size",
+	"created",
+}
 
 type Command struct {
 	client   docker.Client
@@ -30,24 +38,26 @@ func (c Command) Name() string {
 
 func (c Command) Build() *cobra.Command {
 	var (
-		all     bool
-		compact bool
-		full    bool
-		sortBy  string
+		all bool
 	)
+	view := commands.NewViewOptions("size", allowedSortFields)
 
 	cmd := &cobra.Command{
 		Use:   "images",
 		Short: "Display Docker images in a clean table",
+		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error { // NEW
+			return view.Validate()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
 			c.log.Debug(
 				"listing images",
 				"all", all,
-				"sort", sortBy,
-				"compact", compact,
-				"full", full,
+				"sort", view.Sort,
+				"compact", view.Compact,
+				"full", view.Full,
 			)
 
 			images, err := c.client.ListImages(ctx, all)
@@ -56,17 +66,20 @@ func (c Command) Build() *cobra.Command {
 				return err
 			}
 
-			sorted := sortImages(images, sortBy)
-			columns := getImageColumns(compact, full)
+			sorted := sortImages(images, view.Sort)
+			columns := getImageColumns(view.Compact, view.Full)
+
+			if view.IsJSON() {
+				return commands.RenderJSON(cmd.OutOrStdout(), sorted)
+			}
+
 			c.renderer.RenderImages(sorted, columns, c.log)
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVarP(&all, "all", "a", false, "Show all images (including intermediate)")
-	cmd.Flags().BoolVar(&compact, "compact", false, "Compact view")
-	cmd.Flags().BoolVar(&full, "full", false, "Full view")
-	cmd.Flags().StringVar(&sortBy, "sort", "size", "Sort by: repository, tag, size, created")
+	view.AddFlags(cmd)
 
 	return cmd
 }

@@ -4,11 +4,18 @@ import (
 	"log/slog"
 	"sort"
 
+	"github.com/JahidNishat/docktab/internal/commands"
 	"github.com/spf13/cobra"
 
 	"github.com/JahidNishat/docktab/internal/docker"
 	"github.com/JahidNishat/docktab/internal/table"
 )
+
+var allowedSortFields = []string{
+	"name",
+	"driver",
+	"created",
+}
 
 type Command struct {
 	client   docker.Client
@@ -29,23 +36,23 @@ func (c Command) Name() string {
 }
 
 func (c Command) Build() *cobra.Command {
-	var (
-		compact bool
-		full    bool
-		sortBy  string
-	)
+	view := commands.NewViewOptions("name", allowedSortFields)
 
 	cmd := &cobra.Command{
 		Use:   "volumes",
 		Short: "Display Docker volumes in a clean table",
+		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error { // NEW
+			return view.Validate()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
 			c.log.Debug(
 				"listing volumes",
-				"sort", sortBy,
-				"compact", compact,
-				"full", full,
+				"sort", view.Sort,
+				"compact", view.Compact,
+				"full", view.Full,
 			)
 
 			volumes, err := c.client.ListVolumes(ctx)
@@ -53,16 +60,19 @@ func (c Command) Build() *cobra.Command {
 				return err
 			}
 
-			sorted := sortVolumes(volumes, sortBy)
-			columns := getVolumeColumns(compact, full)
+			sorted := sortVolumes(volumes, view.Sort)
+			columns := getVolumeColumns(view.Compact, view.Full)
+
+			if view.IsJSON() {
+				return commands.RenderJSON(cmd.OutOrStdout(), sorted)
+			}
+
 			c.renderer.RenderVolumes(sorted, columns, c.log)
 			return nil
 		},
 	}
 
-	cmd.Flags().BoolVar(&compact, "compact", false, "Compact view")
-	cmd.Flags().BoolVar(&full, "full", false, "Full view")
-	cmd.Flags().StringVar(&sortBy, "sort", "name", "Sort by: name, driver, created")
+	view.AddFlags(cmd)
 
 	return cmd
 }
